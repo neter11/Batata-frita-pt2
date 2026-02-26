@@ -1,43 +1,48 @@
 # Database Line Filter
 
 ## Project Overview
-A full-stack web application built with Express (backend) and React/Vite (frontend), running together on a single port (5000) in development mode. The server uses Express in development with Vite middleware for hot reloading.
+A client-side React application that processes .txt database files, removes duplicates, and filters lines by mail, country, date, and other criteria. Built with React/Vite with a matrix/cyberpunk aesthetic.
 
 ## Architecture
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Radix UI components, TanStack Query, Wouter router
-- **Backend**: Express 5 (Node.js), TypeScript via tsx
-- **Build**: Vite 7 (frontend bundler), esbuild (server bundler)
-- **Storage**: In-memory (MemStorage) by default; Drizzle ORM + PostgreSQL available via DATABASE_URL
-- **Auth**: Passport.js (passport-local) with express-session
+- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Radix UI components, TanStack Query, Wouter router, Framer Motion
+- **Build**: Vite 7 (frontend bundler)
+- **Storage**: Pure client-side (no backend/database required)
 
 ## Project Structure
 
 ```
 client/          - React frontend source
+  index.html     - HTML entry point
   src/
-    App.tsx      - Main app component
+    App.tsx      - Main app component with routing
+    main.tsx     - React entry point
+    index.css    - Global styles (Tailwind v4 + custom cyberpunk theme)
     pages/       - Page components
+      home.tsx   - Main database line filter page
+      not-found.tsx - 404 page
     components/  - Shared UI components
-    hooks/       - Custom hooks
+      ui/        - Shadcn/Radix UI components
+    hooks/       - Custom React hooks
+      use-toast.ts  - Toast notifications hook
+      use-mobile.tsx - Mobile detection hook
     lib/         - Utilities
-server/          - Express backend
+      utils.ts   - cn() utility function
+      queryClient.ts - TanStack Query client
+server/          - Express backend (unused in dev, kept for future API routes)
   index.ts       - Server entry point
-  routes.ts      - API routes
-  storage.ts     - Storage interface (MemStorage / DB)
-  vite.ts        - Vite dev middleware integration
+  routes.ts      - API routes (empty)
+  storage.ts     - Storage interface (MemStorage)
+  vite.ts        - Vite dev middleware (unused)
   static.ts      - Static file serving (production)
 shared/          - Shared types/schema
   schema.ts      - Drizzle ORM schema (users table)
-script/
-  build.ts       - Production build script
 ```
 
 ## Running the App
 
-- **Development**: `npm run dev` — starts Express + Vite middleware on port 5000
-- **Build**: `npm run build` — compiles frontend + server to dist/
-- **Production**: `npm start` — runs compiled dist/index.cjs
+- **Development**: `npm run dev` — starts Vite dev server on port 5000
+- **Build**: `npm run build` — compiles frontend to dist/public
 
 ## Workflow
 
@@ -45,6 +50,11 @@ script/
 
 ## Deployment
 
-- Target: autoscale
-- Build: `npm run build`
-- Run: `node dist/index.cjs`
+- Target: static
+- Build: `npm run build` (vite build → dist/public)
+- Public dir: dist/public
+
+## Notes
+
+- This project was imported from GitHub with scrambled file names (all source files were dumped in root with incorrect names). The proper directory structure was reconstructed during setup.
+- The dev script uses Vite directly (not via tsx server/index.ts) due to a Node 20 + Vite 7 ESM compatibility issue with tsx.
