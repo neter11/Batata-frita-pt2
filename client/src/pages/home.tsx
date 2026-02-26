@@ -31,6 +31,36 @@ export default function Home() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  function extractDateOnly(line: string) {
+    const match = line.match(/Date\s*=\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+    if (!match) return null;
+
+    const [year, month, day] = match[1].split('-').map(Number);
+
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+
+  function passesLast3MonthsFilter(line: string, filterValue: string) {
+    if (filterValue === "none") return true;
+
+    const lineDate = extractDateOnly(line);
+    if (!lineDate) return false;
+
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    ));
+
+    const diffMs = todayUTC.getTime() - lineDate.getTime();
+    if (diffMs < 0) return false;
+
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    return diffDays <= 90;
+  }
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -143,14 +173,14 @@ export default function Home() {
     const agora = new Date();
 
     return uniqueLines.filter(line => {
-      // Country Filter
+      // 1. Country Filter
       if (activeCountryFilter.length > 0) {
         const match = line.match(countryRegex);
         const country = match ? match[1].toUpperCase() : "UNKNOWN";
         if (!activeCountryFilter.includes(country)) return false;
       }
 
-      // Mail Filter
+      // 2. Mail Filter
       const mailMatch = line.match(/Mails\s*=\s*(\d+)/i);
       const hasMailsField = mailMatch !== null;
       
@@ -161,27 +191,8 @@ export default function Home() {
         if (mails < activeFilter) return false;
       }
       
-      // Date Filter
-      if (activeDateFilter !== "none") {
-        const dateMatch = line.match(dateRegex);
-        if (!dateMatch) return false;
-        
-        const linhaDate = new Date(dateMatch[1]);
-        if (isNaN(linhaDate.getTime())) return false;
-
-        const diffMs = agora.getTime() - linhaDate.getTime();
-        const diffDias = diffMs / (1000 * 60 * 60 * 24);
-
-        // DEBUG VISUAL
-        // console.log("Linha:", linhaDate, "Dif Dias:", diffDias);
-
-        if (diffDias < 0) return false; // Ignorar datas futuras
-
-        const limit = parseInt(activeDateFilter);
-        if (diffDias > limit) return false;
-      }
-
-      return true;
+      // 3. Last 3 Months filter
+      return passesLast3MonthsFilter(line, activeDateFilter);
     });
   }, [uniqueLines, activeFilter, onlyWithMails, activeCountryFilter, activeDateFilter]);
 
@@ -382,10 +393,7 @@ export default function Home() {
                         className="w-full bg-background/50 border border-primary/20 rounded-md p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       >
                         <option value="none">Sem filtro</option>
-                        <option value="30">Último 1 mês</option>
-                        <option value="60">Últimos 2 meses</option>
                         <option value="90">Últimos 3 meses</option>
-                        <option value="240">Últimos 8 meses</option>
                       </select>
                     </div>
 
@@ -433,7 +441,7 @@ export default function Home() {
                         <div className="font-bold border-b border-primary/20 pb-1 mb-1">FILTROS ATIVOS:</div>
                         {activeCountryFilter.length > 0 && <div>• PAÍSES: {activeCountryFilter.join(", ")}</div>}
                         {activeFilter !== null && <div>• MAILS ≥ {activeFilter}</div>}
-                        {activeDateFilter !== "none" && <div>• DATA: {activeDateFilter === "30" ? "Último 1 mês" : activeDateFilter === "60" ? "Últimos 2 meses" : activeDateFilter === "90" ? "Últimos 3 meses" : "Últimos 8 meses"}</div>}
+                        {activeDateFilter !== "none" && <div>• DATA: Últimos 3 meses</div>}
                         {onlyWithMails && <div>• APENAS COM CAMPO MAILS</div>}
                       </div>
                     )}

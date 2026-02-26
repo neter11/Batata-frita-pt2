@@ -1,0 +1,138 @@
+PROMPT – Replace Date Filter With Simple “Last 3 Months” Logic
+
+Update the existing project and completely replace the current “Last Messages” date filter system.
+
+Remove ALL previous month options and date logic.
+
+We no longer want:
+
+1 month
+
+2 months
+
+8 months
+
+setMonth logic
+
+calendar month subtraction
+
+complex month difference logic
+
+New Date Filter Requirements
+
+The filter must now support ONLY two options:
+
+No Filter
+
+Last 3 Months
+
+That’s it.
+
+Behavior Rules
+
+If "No Filter" is selected → keep all lines normally.
+
+If "Last 3 Months" is selected:
+
+Keep only lines where Date is within the last 90 days.
+
+If a line has no Date = field → remove it.
+
+Ignore hours, minutes, seconds, and milliseconds.
+
+Do NOT modify the original line text.
+
+Deduplication must still happen BEFORE this filter.
+
+This filter must work together with Country and Mails filters.
+
+UI Changes
+
+In the "Advanced Filters" section:
+
+Replace the old date dropdown with a simple select:
+
+No Filter (default)
+
+Last 3 Months
+
+Remove all other month options from the interface.
+
+Implement EXACTLY this Code
+
+Replace all previous date functions with:
+
+function extractDateOnly(line) {
+  const match = line.match(/Date\s*=\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i);
+  if (!match) return null;
+
+  const [year, month, day] = match[1].split('-').map(Number);
+
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function passesLast3MonthsFilter(line, isActive) {
+  if (!isActive) return true;
+
+  const lineDate = extractDateOnly(line);
+  if (!lineDate) return false;
+
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate()
+  ));
+
+  const diffMs = todayUTC.getTime() - lineDate.getTime();
+  if (diffMs < 0) return false;
+
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  return diffDays <= 90;
+}
+Apply Filter Like This
+
+In the main filtering pipeline:
+
+filteredLines = filteredLines.filter(line =>
+  passesLast3MonthsFilter(line, last3MonthsEnabled)
+);
+Processing Order (DO NOT CHANGE)
+
+Remove duplicates (always first)
+
+Apply Country filter
+
+Apply Mails filter
+
+Apply Last 3 Months filter
+
+Display results
+
+Export TXT
+
+Expected Result
+
+If today is:
+2026-02-26
+
+"Last 3 Months" must include:
+
+Any Date >= 2025-11-28 (approximately 90 days)
+
+Older than 90 days → excluded.
+
+After this update, the system must be:
+
+Simple
+
+Stable
+
+Predictable
+
+Free of calendar month bugs
+
+Free of timezone issues
+
+Free of setMonth overflow issues
